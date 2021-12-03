@@ -4,7 +4,8 @@ Indenter for Janet
 
 ## Background
 
-spork/fmt is a compact elegant formatter for Janet by bakpakin.
+[spork/fmt](https://github.com/janet-lang/spork/blob/master/spork/fmt.janet)
+is a compact elegant formatter for Janet by bakpakin.
 
 It works by parsing source while discarding whitespace (except
 newlines) and then emits newly formatted source while removing some
@@ -16,6 +17,17 @@ that one might prefer preserved.
 jandent is based on spork/fmt but it attempts to preserve whitespace
 information to the right of indentation (i.e. after the first
 non-whitespace character on a line).
+
+## Usage
+
+The API is the same as spork/fmt:
+
+* format-print
+* format
+* format-file
+
+There is also a standalone executable named `jindt`, which is
+essentially [jfmt](https://github.com/andrewchambers/jfmt) for `jandent`.
 
 ## Features
 
@@ -75,6 +87,7 @@ The following changes were made to aid comprehension and exploration:
 
 ## Credits
 
+* andrewchambers - jfmt
 * bakpakin - spork/fmt
 * llmII - discussion
 
