@@ -15,8 +15,15 @@ It's fast, but it might discard some whitespace-related information
 that one might prefer preserved.
 
 jandent is based on spork/fmt but it attempts to preserve whitespace
-information to the right of indentation (i.e. after the first
-non-whitespace character on a line).
+information to the right of indentation, e.g.
+```
+   (+ 1 1)   # a comment
+   ^      ^^^
+   |       |
+   |       ----- whitespace is preserved (right of indentation)
+   |
+   ---- indentation point
+```
 
 ## Usage
 
@@ -95,3 +102,4 @@ The following changes were made to aid comprehension and exploration:
 
 Code from spork/fmt was modified and included, thus spork's license
 applies.
+
