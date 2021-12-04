@@ -291,27 +291,11 @@
     #
     (def len (length xs))
     (when (pos? len)
-      (var i 0)
-      # before first non-whitespace node
-      (while (< i len)
-        (unless (ws-or-nl? (xs i))
-          (break))
-        (fmt-1-recur (xs i))
-        (++ i))
-      # at first non-whitespace node or no more nodes
-      (when (< i len)
-        (when (and (= od-col col)
-                   #(or (zero? (tracev i)) (tracev (= "\n" (xs (dec i)))))
-                   )
-          (emit (string/repeat " " (+ od-col 1))))
-        (fmt-1-recur (xs i))
-        (indent 1)
-        (++ i)
-        (while (< i len)
-          (fmt-1-recur (xs i))
-          (++ i))
-        (dropwhite)
-        (dedent)))
+      (fmt-1-recur (xs 0))
+      (indent 1)
+      (for i 1 len (fmt-1-recur (xs i)))
+      (dropwhite)
+      (dedent))
     # XXX: messy part
     (cond
       # empty tuple case
@@ -410,4 +394,3 @@
   (def source (slurp file))
   (def out (format source))
   (spit file out))
-
