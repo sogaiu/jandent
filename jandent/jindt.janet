@@ -1,3 +1,5 @@
+# based heavily on andrewchambers' jfmt -- thanks!
+
 (import ./jandent)
 
 (defn main
