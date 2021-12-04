@@ -255,6 +255,26 @@
     (deep= (format before) after))
   # => true
 
+  (do
+    (def before
+      @``
+       '(# data
+         :ant
+         :bee
+         :cat)
+       ``)
+    #
+    (def after
+      @``
+       '(# data
+         :ant
+         :bee
+         :cat)
+       ``)
+    #
+    (deep= (format before) after))
+  # => true
+
   )
 
 # additional illustrations
