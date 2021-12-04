@@ -1,4 +1,4 @@
-(import ../jandent/jandent :prefix "")
+(import ../jandent/indent :prefix "")
 
 # basic cases aiming to cover
 (comment

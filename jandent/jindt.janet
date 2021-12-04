@@ -1,11 +1,11 @@
 # based heavily on andrewchambers' jfmt -- thanks!
 
-(import ./jandent)
+(import ./indent)
 
 (defn main
   [& args]
   (if (one? (length args))
-    (prin (jandent/format (file/read stdin :all)))
+    (prin (indent/format (file/read stdin :all)))
     (each f (tuple/slice args 1)
-      (jandent/format-file f))))
+      (indent/format-file f))))
 
