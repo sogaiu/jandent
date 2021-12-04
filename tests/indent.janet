@@ -73,9 +73,6 @@
     (deep= (format before) after))
   # => true
 
-  # XXX: try to explain why this should be the case
-  #      fwiw, scheme and clojure do the same,
-  #      though common lisp might not?
   (do
     (def before
       @``
