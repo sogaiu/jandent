@@ -8,30 +8,36 @@ Indenter for Janet
 is a compact elegant formatter for Janet by bakpakin.
 
 It works by parsing source while discarding whitespace (except
-newlines) and then emits newly formatted source while removing some
-newlines and inserting whitespace in appropriate locations.
+newlines) and then emits newly formatted source possibly removing
+some newlines and inserting whitespace in appropriate locations.
 
 It's fast, but it might discard some whitespace-related information
 that one might prefer preserved.
 
+## What
+
 jandent is based on spork/fmt but it attempts to preserve whitespace
 information to the right of indentation, e.g.
 ```
-   (+ 1 1)   # a comment
-   ^      ^^^
-   |       |
-   |       ----- whitespace is preserved (right of indentation)
-   |
-   ---- indentation point
+     (+ 1 1)   # a comment
+^^^^^       ^^^
+| |          |
+| |          --- whitespace is preserved
+| |              (right of indentation)
+| |
+|  --- indentation
+|
+ --- beginning of line
 ```
+See the Details section below for further examples.
 
 ## Usage
 
 The API is the same as spork/fmt:
 
-* format-print
-* format
-* format-file
+* `format-print`
+* `format`
+* `format-file`
 
 There is also a standalone executable named `jindt`, which is
 essentially [jfmt](https://github.com/andrewchambers/jfmt) for `jandent`.
@@ -40,16 +46,17 @@ essentially [jfmt](https://github.com/andrewchambers/jfmt) for `jandent`.
 
 * Leave whitespace to the right of indentation alone
 * Handle "data" tuples
+* Prevents closing delimiters from living in the left-most column
 * Doesn't remove newlines
 * Doesn't add newline at end
-* Treat `comment` as an indent-2 item
+* Treat `comment` as an "indent with 2 spaces" item
 
 ## Details
 
-spork/fmt's approach is fast but it can adversely impact some
+spork/fmt's approach is quick but it can adversely impact some
 situations involving contiguous whitespace.
 
-Some prefer to have columnar alignment like:
+If you have columnar alignment like:
 
 ```
 (let [ant   1
@@ -57,7 +64,7 @@ Some prefer to have columnar alignment like:
   (+ ant tiger))
 ```
 
-spork/fmt will turn this into:
+At the time of this writing, spork/fmt will turn this into:
 
 ```
 (let [ant 1
@@ -73,7 +80,7 @@ Another situation has to do with whitespace before comments, like:
  :c 3}
 ```
 
-This will become:
+Similarly, this will become:
 
 ```
 {:a 1 # this nice comment
