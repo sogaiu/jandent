@@ -199,12 +199,43 @@
   "Emit formatted."
   [tree]
 
-  # tracks current column of what's been emitted
+  # tracks current column based on emitted content
+  #   modified by `emit` and `newline`
   (var col 0)
+
   # stack for saving / restoring `white`
+  #   manipulated by `indent` and `dedent`
   (def ident-stack @[])
+
+  # what `white` is reset to when `newline` is called
+  #   also is saved/restored to/from `ident-stack`
   (var ident "")
+
+  # whitespace that will be output via `flushwhite`
+  #   manipulated directly by `flushwhite`, `dropwhite`, `newline`
+  #   also indirectly via `dropwhite` by:
+  #     `newline`
+  #     `emit-body`
+  #     `emit-funcall`
+  #     `emit-string`
   (def white @"")
+
+  # `emit` and `newline` are the only things that output directly
+  #
+  # `emit` is called by:
+  #   `flushwhite`
+  #   `emit-body`
+  #   `emit-funcall``
+  #   `emit-string`
+  #   `emit-rmform`
+  #   `fmt-1`
+  #
+  # `newline` is called by:
+  #   `emit-string`
+  #   `fmt-1`
+  #
+  # `flushwhite` is called by:
+  #   `fmt-1`
 
   (defn emit [& xs]
     (each x xs
