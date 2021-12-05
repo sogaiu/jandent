@@ -2,7 +2,7 @@
 
 ### hint for comprehension
 ###
-### understand the following line in `fmt` and everything
+### understand the following line in `fmt-1` and everything
 ### that exists to support it:
 ###
 ###   (unless (= node "\n") (flushwhite))
