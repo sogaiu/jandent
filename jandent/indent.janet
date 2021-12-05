@@ -197,12 +197,6 @@
       (break)))
   (truthy? found-nl))
 
-(defn ws-or-nl?
-  [node]
-  (truthy?
-    (or (= "\n" node)
-        (= :ws (get node 0)))))
-
 (defn ws-or-top?
   [node]
   (truthy?
