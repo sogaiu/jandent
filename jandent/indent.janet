@@ -195,6 +195,31 @@
       [:comment _] true
       [:ws _] true)))
 
+(defn non-nls
+  [xs]
+  (filter |(not= $ "\n") xs))
+
+(defn has-nl?
+  [xs]
+  (var found-nl nil)
+  (each x xs
+    (when (= "\n" x)
+      (set found-nl true)
+      (break)))
+  (truthy? found-nl))
+
+(defn ws-or-nl?
+  [node]
+  (truthy?
+    (or (= "\n" node)
+        (= :ws (get node 0)))))
+
+(defn ws-or-top?
+  [node]
+  (truthy?
+    (when-let [[ntype] node]
+      (or (= ntype :ws) (= ntype :top)))))
+
 (defn fmt
   "Emit formatted."
   [tree]
@@ -267,31 +292,6 @@
 
   # Mutual recursion
   (var fmt-1-recur nil)
-
-  (defn non-nls
-    [xs]
-    (filter |(not= $ "\n") xs))
-
-  (defn has-nl?
-    [xs]
-    (var found-nl nil)
-    (each x xs
-      (when (= "\n" x)
-        (set found-nl true)
-        (break)))
-    (truthy? found-nl))
-
-  (defn ws-or-nl?
-    [node]
-    (truthy?
-      (or (= "\n" node)
-          (= :ws (get node 0)))))
-
-  (defn ws-or-top?
-    [node]
-    (truthy?
-      (when-let [[ntype] node]
-        (or (= ntype :ws) (= ntype :top)))))
 
   (defn emit-body
     [open xs close &opt delta]
