@@ -1,16 +1,5 @@
 ### based on spork/fmt by bakpakin
 
-### modified to:
-###
-### * leave whitespace to the right of indentation alone
-### * handle "data" tuples
-### * not remove newlines
-### * not add newline at end
-### * treat `comment` as an indent-2 item
-### * use longer names in pegs
-### * no top-level private defs or defns
-### * have a bit more commentary
-
 ### hint for comprehension
 ###
 ### understand the following line in `fmt` and everything
