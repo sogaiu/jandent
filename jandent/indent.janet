@@ -190,12 +190,7 @@
 
 (defn has-nl?
   [xs]
-  (var found-nl nil)
-  (each x xs
-    (when (= "\n" x)
-      (set found-nl true)
-      (break)))
-  (truthy? found-nl))
+  (truthy? (find |(= $ "\n") xs)))
 
 (defn ws-or-top?
   [node]
