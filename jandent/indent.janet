@@ -215,6 +215,8 @@
 
   # tracks current column based on emitted content
   #   modified by `emit` and `newline`
+  #   mostly used by `indent`
+  #   also used by `emit-body` and `emit-funcall` for some edge cases
   (var col 0)
 
   # stack for saving / restoring `white`
@@ -248,8 +250,12 @@
   #   `emit-string`
   #   `fmt-1`
   #
-  # `flushwhite` is called by:
-  #   `fmt-1`
+  # `fmt-1` is the only caller of:
+  #   `flushwhite`
+  #   `emit-body`
+  #   `emit-funcall`
+  #   `emit-string`
+  #   `emit-rmform`
 
   (defn emit [& xs]
     (each x xs
