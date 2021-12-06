@@ -19,88 +19,149 @@
 # the sole exception is the node for a newline which is:
 #
 #   "\n"
-(def parse-peg
-  "Peg to parse Janet with extra information, namely comments."
-  (peg/compile
-    ~{:nl (capture "\n")
-      :ws (replace (capture (some (set " \t\r\f\0\v")))
-                   ,(pnode :ws))
-      :readermac (set "';~,|")
-      :symchars (choice (range "09" "AZ" "az" "\x80\xFF")
-                        (set "!$%&*+-./:<?=>@^_"))
-      :token (some :symchars)
-      :hex (range "09" "af" "AF")
-      :escape
-      (sequence "\\" (choice (set "ntrzfev0\"\\")
-                             (sequence "x" (repeat 2 :hex))
-                             (sequence "u" (repeat 4 :hex))
-                             (sequence "U" (repeat 6 :hex))
-                             (error (constant "bad hex escape"))))
-      :comment (replace (sequence "#"
-                                  (capture (to (choice "\n" -1))))
-                        ,(pnode :comment))
-      :span (replace (capture :token)
-                     ,(pnode :span))
-      :bytes (capture (sequence `"`
-                                (any (choice :escape
-                                             (if-not `"` 1)))
-                                `"`))
-      :string (replace :bytes ,(pnode :string))
-      :buffer (replace (sequence "@" :bytes)
-                       ,(pnode :buffer))
-      :long-bytes
-      (capture {:delim (some "`")
-                :open (capture :delim :n)
-                :close (cmt (sequence (not (look -1 "`"))
-                                      (backref :n)
-                                      (capture :delim))
-                            ,=)
-                :main (drop (sequence :open
-                                      (any (if-not :close 1))
-                                      :close))})
-      :long-string (replace :long-bytes ,(pnode :string))
-      :long-buffer (replace (sequence "@" :long-bytes)
-                            ,(pnode :buffer))
-      :ptuple (replace (group (sequence "("
-                                        (any :input)
-                                        (choice ")" (error))))
-                       ,(pnode :ptuple))
-      :btuple (replace (group (sequence "["
-                                        (any :input)
-                                        (choice "]" (error))))
-                       ,(pnode :btuple))
-      :struct (replace (group (sequence "{"
-                                        (any :input)
-                                        (choice "}" (error))))
-                       ,(pnode :struct))
-      :parray (replace (group (sequence "@("
-                                        (any :input)
-                                        (choice ")" (error))))
-                       ,(pnode :array))
-      :barray (replace (group (sequence "@["
-                                        (any :input)
-                                        (choice "]" (error))))
-                       ,(pnode :array))
-      :table (replace (group (sequence "@{"
-                                       (any :input)
-                                       (choice "}" (error))))
-                      ,(pnode :table))
-      :rmform (replace (group (sequence ':readermac
-                                        (group (any :non-form))
-                                        :form))
-                       ,(pnode :rmform))
-      :form (choice :rmform
-                    :parray :barray :ptuple :btuple :table :struct
-                    :buffer :string :long-buffer :long-string
-                    :span)
-      :non-form (choice :ws :nl :comment)
-      :input (choice :non-form :form)
-      :main (sequence (any :input)
-                      (choice -1 (error)))}))
-
+#
+# there are 3 kinds of non-newline whitespace:
+#
+# 1. :ws-bi - before indentation (leading whitespace)
+# 2. :ws-tr - after last non-whitespace (trailing whitespace)
+# 3. :ws    - there is non-whitespace somewhere to the left and right
+#
+# example:
+#
+# bol   (+ 1 1)   eol
+#    ^^^  ^    ^^^
+#     |   |     |
+#     |  :ws    |
+#     |      :ws-tr
+#  :ws-bi
+#
+# bol stands for beginning of line
+# eol stands for end of line
 (defn make-tree
   "Turn a string of source code into a tree that will be printed"
   [source]
+  (var bi true)
+  #
+  (def parse-peg
+    "Peg to parse Janet with extra information, namely comments."
+    (peg/compile
+      ~{:nl "\n"
+        :ws (cmt (sequence (capture (some (set " \t\r\f\0\v")))
+                           (look 0 (choice -1
+                                           (capture 1))))
+                 ,(fn [& args]
+                    (def ws (get args 0))
+                    (cond
+                      bi
+                      [:ws-bi ws]
+                      #
+                      (= 1 (length args))
+                      [:ws-tr ws]
+                      #
+                      (= 2 (length args))
+                      (if (= "\n" (get args 1))
+                        [:ws-tr ws]
+                        [:ws ws])
+                      #
+                      (do
+                        (eprintf "unexpected ws info: %p %p"
+                                 args (length args))
+                        (error "unexpected input")))))
+        :readermac (set "';~,|")
+        :symchars (choice (range "09" "AZ" "az" "\x80\xFF")
+                          (set "!$%&*+-./:<?=>@^_"))
+        :token (some :symchars)
+        :hex (range "09" "af" "AF")
+        :escape
+        (sequence "\\" (choice (set "ntrzfev0\"\\")
+                               (sequence "x" (repeat 2 :hex))
+                               (sequence "u" (repeat 4 :hex))
+                               (sequence "U" (repeat 6 :hex))
+                               (error (constant "bad hex escape"))))
+        :comment (replace (sequence "#"
+                                    (capture (to (choice "\n" -1))))
+                          ,(pnode :comment))
+        :span (replace (capture :token)
+                       ,(pnode :span))
+        :bytes (capture (sequence `"`
+                                  (any (choice :escape
+                                               (if-not `"` 1)))
+                                  `"`))
+        :string (replace :bytes ,(pnode :string))
+        :buffer (replace (sequence "@" :bytes)
+                         ,(pnode :buffer))
+        :long-bytes
+        (capture {:delim (some "`")
+                  :open (capture :delim :n)
+                  :close (cmt (sequence (not (look -1 "`"))
+                                        (backref :n)
+                                        (capture :delim))
+                              ,=)
+                  :main (drop (sequence :open
+                                        (any (if-not :close 1))
+                                        :close))})
+        :long-string (replace :long-bytes ,(pnode :string))
+        :long-buffer (replace (sequence "@" :long-bytes)
+                              ,(pnode :buffer))
+        :ptuple (replace (group (sequence "("
+                                          (any :input)
+                                          (choice ")" (error))))
+                         ,(pnode :ptuple))
+        :btuple (replace (group (sequence "["
+                                          (any :input)
+                                          (choice "]" (error))))
+                         ,(pnode :btuple))
+        :struct (replace (group (sequence "{"
+                                          (any :input)
+                                          (choice "}" (error))))
+                         ,(pnode :struct))
+        :parray (replace (group (sequence "@("
+                                          (any :input)
+                                          (choice ")" (error))))
+                         ,(pnode :array))
+        :barray (replace (group (sequence "@["
+                                          (any :input)
+                                          (choice "]" (error))))
+                         ,(pnode :array))
+        :table (replace (group (sequence "@{"
+                                         (any :input)
+                                         (choice "}" (error))))
+                        ,(pnode :table))
+        :rmform (replace (group (sequence ':readermac
+                                          (group (any :non-form))
+                                          :form))
+                         ,(pnode :rmform))
+        :form
+        (sequence (drop (cmt (constant "smile")
+                             ,(fn [& args]
+                                (set bi false)
+                                true)))
+                  (choice :rmform
+                          :parray :barray :ptuple :btuple :table :struct
+                          :buffer :string :long-buffer :long-string
+                          :span))
+        :non-form
+        (choice :ws
+                # :nl
+                (cmt (capture :nl)
+                     ,(fn [& args]
+                        (set bi true)
+                        (first args)))
+                # :comment
+                (sequence (drop (cmt (constant "smile")
+                                     ,(fn [& args]
+                                        (set bi false)
+                                        true)))
+                          :comment))
+        :input
+        (choice :non-form
+                (cmt (capture :form)
+                     ,(fn [& args]
+                        (set bi false)
+                        (first args))))
+        :main (sequence (any :input)
+                        (choice -1 (error)))}))
+  #
   [:top (peg/match parse-peg source)])
 
 (comment
@@ -121,6 +182,19 @@
 
   (deep=
     #
+    (make-tree " (+ 1 1) ")
+    #
+    '(:top
+       @[(:ws-bi " ")
+         (:ptuple
+           @[(:span "+") (:ws " ")
+             (:span "1") (:ws " ")
+             (:span "1")])
+         (:ws-tr " ")]))
+  # => true
+
+  (deep=
+    #
     (make-tree
       (string "(comment\n"
               "\n"
@@ -132,9 +206,9 @@
        @[(:ptuple
            @[(:span "comment") "\n"
              "\n"
-             (:ws "  ") (:span ":hi") "\n"
-             (:ws "  ") (:comment "") "\n"
-             (:ws "  ")])]))
+             (:ws-bi "  ") (:span ":hi") "\n"
+             (:ws-bi "  ") (:comment "") "\n"
+             (:ws-bi "  ")])]))
   # => true
 
   )
@@ -165,12 +239,45 @@
   "Peg to use to fuzzy match certain forms."
   (peg/compile ~(choice "with-" "def" "if-" "when-")))
 
+(defn first-non-ws-is-nl?
+  [xs]
+  (var result nil)
+  (each x xs
+    (when (= "\n" x)
+      (set result true)
+      (break))
+    (when-let [[tag _] x]
+      (when (and (not= :ws-bi tag)
+                 (not= :ws tag)
+                 (not= :ws-tr tag))
+        (break false))))
+  (truthy? result))
+
+(comment
+
+  (first-non-ws-is-nl? ["\n" [:ws " "]])
+  # => true
+
+  (first-non-ws-is-nl? [[:ws " "] "\n" [:ws " "]])
+  # => true
+
+  (first-non-ws-is-nl? [[:ws-bi " "] "\n" [:ws " "]])
+  # => true
+
+  (first-non-ws-is-nl? [[:ws-tr " "] "\n" [:ws " "]])
+  # => true
+
+  (first-non-ws-is-nl? [[:comment " hi"] "\n" [:ws " "]])
+  # => false
+
+  )
+
 (defn check-indent-2
   "Check if a tuple needs a 2 space indent or not"
   [items]
   (if-let [[tag body] (get items 0)]
     (cond
-      (= "\n" (get items 1)) true
+      (first-non-ws-is-nl? (slice items 1)) true
       (not= tag :span) nil
       (in indent-2-forms body) true
       (peg/match indent-2-peg body) true)))
@@ -182,7 +289,10 @@
     (match head-node
       "\n" true
       [:comment _] true
-      [:ws _] true)))
+      [:ws _] true
+      # XXX: can these happen?
+      [:ws-bi _] true
+      [:ws-tr _] true)))
 
 (defn non-nls
   [xs]
@@ -191,12 +301,6 @@
 (defn has-nl?
   [xs]
   (truthy? (find |(= $ "\n") xs)))
-
-(defn ws-or-top?
-  [node]
-  (truthy?
-    (when-let [[ntype] node]
-      (or (= ntype :ws) (= ntype :top)))))
 
 (defn fmt
   "Emit formatted."
@@ -226,6 +330,7 @@
   (def white @"")
 
   # `emit` and `newline` are the only things that output directly
+  # (`fmt-1` now directly outputs trailing whitespace)
   #
   # `emit` is called by:
   #   `flushwhite`
@@ -339,20 +444,16 @@
       (fmt-1-recur nf))
     (fmt-1-recur form))
 
-  # tracking whether "b"efore "i"ndentation
-  (var bi true)
-
   (defn fmt-1
     [node]
-    # about to emit non-ws, so not before indentation
-    (when (not (ws-or-top? node))
-      (set bi false))
     # insert appropriate whitespace
     (unless (= node "\n") (flushwhite)) # KEY LINE!
     # node-specific "emission"
     (match node
       "\n" (newline)
-      [:ws x] (unless bi (emit x))
+      [:ws-bi x] (prin "")
+      [:ws x] (emit x)
+      [:ws-tr x] (prin x)
       [:comment x] (emit "#" x)
       [:span x] (emit x)
       [:string x] (emit-string x)
@@ -370,17 +471,7 @@
       [:struct xs] (emit-body "{" xs "}")
       [:table xs] (emit-body "@{" xs "}")
       [:rmform [rm nfs form]] (emit-rmform rm nfs form)
-      [:top xs] (emit-body "" xs ""))
-    # update "before indentation" tracking info
-    (cond
-      # right after a newline means before indentation
-      (= node "\n")
-      (set bi true)
-      # last output was non-ws, non-nl, so not before indentation
-      (not (ws-or-top? node))
-      (set bi false)
-      # otherwise don't modify bi
-      ))
+      [:top xs] (emit-body "" xs "")))
 
   (set fmt-1-recur fmt-1)
   (fmt-1 tree)
