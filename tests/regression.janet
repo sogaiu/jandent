@@ -55,6 +55,10 @@
     (deep= (format before) after))
   # => true
 
+  )
+
+(comment
+
   # trailing whitespace on util/render line
   (do
     (def before
@@ -90,6 +94,26 @@
         "(render            \n"
         `  (draw-text "You Win"))`))
     #
+    (deep= (format before) after))
+  # => true
+
+  )
+
+# found in: 3c44171fd410974cdb4eba2a1f33c31ed3523ec5
+(comment
+
+  (do
+    (def before
+      (buffer/push-string
+        @""
+        "  " "\n"
+        "(def a 1)"))
+    #
+    (def after
+      (buffer/push-string
+        @""
+        "  " "\n"
+        "(def a 1)"))
     (deep= (format before) after))
   # => true
 
