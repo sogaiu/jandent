@@ -118,3 +118,32 @@
   # => true
 
   )
+
+# found in: fec46566e73dccb88efd7ccbeb6ab04229a76dce
+(comment
+
+  (do
+    (def before
+      (buffer/push-string
+        @""
+        `(defn my-fn`  "\n"
+        `  []`         "\n"
+        ""             "\n"
+        ` `            "\n" # the single whitespace here should be preserved
+        `  (when true` "\n"
+        `    (+ 1 1)))`))
+    #
+    (def after
+      (buffer/push-string
+        @""
+        `(defn my-fn`  "\n"
+        `  []`         "\n"
+        ""             "\n"
+        ` `            "\n"
+        `  (when true` "\n"
+        `    (+ 1 1)))`))
+    #
+    (deep= (format before) after))
+  # => true
+
+  )
