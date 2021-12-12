@@ -147,3 +147,36 @@
   # => true
 
   )
+
+# found in: 6840d92da9a6911ff937df561a817ae27d8620df
+(comment
+
+  (do
+    (def before
+      (buffer/push-string
+        @""
+        "  (def code" "\n"
+        "  ``"        "\n"
+        "  (defn a"   "\n"
+        "    [x]"     "\n"
+        "    [)"      "\n"
+        "  ``"        "\n"
+        "  )"
+        ))
+    #
+    (def after
+      (buffer/push-string
+        @""
+        "(def code"   "\n"
+        "  ``"        "\n"
+        "  (defn a"   "\n"
+        "    [x]"     "\n"
+        "    [)"      "\n"
+        "  ``"        "\n"
+        "  )"
+        ))
+    (deep= (format before) after))
+  # => true
+
+  )
+
