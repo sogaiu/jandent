@@ -180,3 +180,21 @@
 
   )
 
+# found in: a25565fadc730f3f39bb7061115085984f497802
+(comment
+
+  (do
+    (def before
+      (buffer/push-string
+        @""
+        "(def code 1)" "\n"))
+    #
+    (def after
+      (buffer/push-string
+        @""
+        "(def code 1)" "\n"))
+    (deep= (format before) after))
+  # => true
+
+  )
+
