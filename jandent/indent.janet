@@ -71,12 +71,11 @@
         :symchars (choice (range "09" "AZ" "az" "\x80\xFF")
                           (set "!$%&*+-./:<?=>@^_"))
         :token (some :symchars)
-        :hex (range "09" "af" "AF")
         :escape
         (sequence "\\" (choice (set "ntrzfev0\"\\")
-                               (sequence "x" (repeat 2 :hex))
-                               (sequence "u" (repeat 4 :hex))
-                               (sequence "U" (repeat 6 :hex))
+                               (sequence "x" (2 :h))
+                               (sequence "u" (4 :h))
+                               (sequence "U" (6 :h))
                                (error (constant "bad hex escape"))))
         :comment (replace (sequence "#"
                                     (capture (to (choice "\n" -1))))
