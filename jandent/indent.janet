@@ -166,49 +166,41 @@
 (comment
 
   (make-tree "# hello\n")
-  # => '(:top @[(:comment " hello") "\n"])
+  # =>
+  '(:top @[(:comment " hello") "\n"])
 
-  (deep=
-    #
-    (make-tree "(+ 1 1)")
-    #
-    '(:top
-       @[(:ptuple
-           @[(:span "+") (:ws " ")
-             (:span "1") (:ws " ")
-             (:span "1")])]))
-  # => true
+  (make-tree "(+ 1 1)")
+  # =>
+  '(:top
+     @[(:ptuple
+         @[(:span "+") (:ws " ")
+           (:span "1") (:ws " ")
+           (:span "1")])])
 
-  (deep=
-    #
-    (make-tree " (+ 1 1) ")
-    #
-    '(:top
-       @[(:ws-bi " ")
-         (:ptuple
-           @[(:span "+") (:ws " ")
-             (:span "1") (:ws " ")
-             (:span "1")])
-         (:ws-tr " ")]))
-  # => true
+  (make-tree " (+ 1 1) ")
+  # =>
+  '(:top
+     @[(:ws-bi " ")
+       (:ptuple
+         @[(:span "+") (:ws " ")
+           (:span "1") (:ws " ")
+           (:span "1")])
+       (:ws-tr " ")])
 
-  (deep=
-    #
-    (make-tree
-      (string "(comment\n"
-              "\n"
-              "  :hi\n"
-              "  #\n"
-              "  )"))
-    #
-    '(:top
-       @[(:ptuple
-           @[(:span "comment") "\n"
-             "\n"
-             (:ws-bi "  ") (:span ":hi") "\n"
-             (:ws-bi "  ") (:comment "") "\n"
-             (:ws-bi "  ")])]))
-  # => true
+  (make-tree
+    (string "(comment\n"
+            "\n"
+            "  :hi\n"
+            "  #\n"
+            "  )"))
+  # =>
+  '(:top
+     @[(:ptuple
+         @[(:span "comment") "\n"
+           "\n"
+           (:ws-bi "  ") (:span ":hi") "\n"
+           (:ws-bi "  ") (:comment "") "\n"
+           (:ws-bi "  ")])])
 
   )
 
@@ -255,19 +247,24 @@
 (comment
 
   (first-non-ws-is-nl? ["\n" [:ws " "]])
-  # => true
+  # =>
+  true
 
   (first-non-ws-is-nl? [[:ws " "] "\n" [:ws " "]])
-  # => true
+  # =>
+  true
 
   (first-non-ws-is-nl? [[:ws-bi " "] "\n" [:ws " "]])
-  # => true
+  # =>
+  true
 
   (first-non-ws-is-nl? [[:ws-tr " "] "\n" [:ws " "]])
-  # => true
+  # =>
+  true
 
   (first-non-ws-is-nl? [[:comment " hi"] "\n" [:ws " "]])
-  # => false
+  # =>
+  false
 
   )
 
