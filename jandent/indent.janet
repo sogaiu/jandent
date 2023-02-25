@@ -220,7 +220,7 @@
            "prompt"
            "repeat"
            "seq" "short-fn"
-           "try"
+           "tabseq" "try"
            "unless"
            "var" "varfn" "varglobal" "var-"
            "when" "when-let" "when-with" "while" "with" "with-dyns"
