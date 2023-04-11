@@ -130,12 +130,18 @@
                                           (group (any :non-form))
                                           :form))
                          ,(pnode :rmform))
+        :unreadable (replace (capture (sequence "<"
+                                                (between 1 32 :symchars)
+                                                :s+
+                                                (thru ">")))
+                             ,(pnode :unreadable))
         :form
         (sequence (drop (cmt (constant "smile")
                              ,(fn [& args]
                                 (set bi false)
                                 true)))
-                  (choice :rmform
+                  (choice :unreadable
+                          :rmform
                           :parray :barray :ptuple :btuple :table :struct
                           :buffer :string :long-buffer :long-string
                           :span))
@@ -201,6 +207,61 @@
            (:ws-bi "  ") (:span ":hi") "\n"
            (:ws-bi "  ") (:comment "") "\n"
            (:ws-bi "  ")])])
+
+  (make-tree
+    ``
+    (do 
+    (def _0000by 
+    [0 1 2]) 
+    (var _0000bx 
+    (<function next> _0000by nil)) 
+    (while (<function not=> nil _0000bx) 
+    (def i 
+    (<function in> _0000by _0000bx)) 
+    (break) 
+    (set _0000bx 
+    (<function next> _0000by _0000bx))))
+    ``)
+  # =>
+  '(:top
+     @[(:ptuple
+         @[(:span "do") (:ws-tr " ") "\n"
+           (:ptuple
+             @[(:span "def") (:ws " ")
+               (:span "_0000by") (:ws-tr " ") "\n"
+               (:btuple
+                 @[(:span "0") (:ws " ")
+                   (:span "1") (:ws " ")
+                   (:span "2")])]) (:ws-tr " ") "\n"
+           (:ptuple
+             @[(:span "var") (:ws " ")
+               (:span "_0000bx") (:ws-tr " ") "\n"
+               (:ptuple
+                 @[(:unreadable "<function next>") (:ws " ")
+                   (:span "_0000by") (:ws " ")
+                   (:span "nil")])]) (:ws-tr " ") "\n"
+           (:ptuple
+             @[(:span "while") (:ws " ")
+               (:ptuple
+                 @[(:unreadable "<function not=>") (:ws " ")
+                   (:span "nil") (:ws " ")
+                   (:span "_0000bx")]) (:ws-tr " ") "\n"
+               (:ptuple
+                 @[(:span "def") (:ws " ")
+                   (:span "i") (:ws-tr " ") "\n"
+                   (:ptuple
+                     @[(:unreadable "<function in>") (:ws " ")
+                       (:span "_0000by") (:ws " ")
+                       (:span "_0000bx")])]) (:ws-tr " ") "\n"
+               (:ptuple
+                 @[(:span "break")]) (:ws-tr " ") "\n"
+               (:ptuple
+                 @[(:span "set") (:ws " ")
+                   (:span "_0000bx") (:ws-tr " ") "\n"
+                   (:ptuple
+                     @[(:unreadable "<function next>") (:ws " ")
+                       (:span "_0000by") (:ws " ")
+                       (:span "_0000bx")])])])])])
 
   )
 
@@ -470,6 +531,7 @@
       [:struct xs] (emit-body "{" xs "}")
       [:table xs] (emit-body "@{" xs "}")
       [:rmform [rm nfs form]] (emit-rmform rm nfs form)
+      [:unreadable x] (emit x)
       [:top xs] (emit-body "" xs "" nil true)))
 
   (set fmt-1-recur fmt-1)
@@ -492,6 +554,38 @@
   (with-dyns [:out out]
     (format-print source))
   out)
+
+(comment
+
+  (format
+    ``
+    (do 
+    (def _0000by 
+    [0 1 2]) 
+    (var _0000bx 
+    (<function next> _0000by nil)) 
+    (while (<function not=> nil _0000bx) 
+    (def i 
+    (<function in> _0000by _0000bx)) 
+    (break) 
+    (set _0000bx 
+    (<function next> _0000by _0000bx))))
+    ``)
+  # =>
+  @``
+   (do 
+     (def _0000by 
+       [0 1 2]) 
+     (var _0000bx 
+       (<function next> _0000by nil)) 
+     (while (<function not=> nil _0000bx) 
+       (def i 
+         (<function in> _0000by _0000bx)) 
+       (break) 
+       (set _0000bx 
+            (<function next> _0000by _0000bx))))
+   ``
+  )
 
 (defn format-file
   "Format a file"
