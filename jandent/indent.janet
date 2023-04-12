@@ -130,11 +130,19 @@
                                           (group (any :non-form))
                                           :form))
                          ,(pnode :rmform))
-        :unreadable (replace (capture (sequence "<"
-                                                (between 1 32 :symchars)
-                                                :s+
-                                                (thru ">")))
-                             ,(pnode :unreadable))
+        :unreadable (replace
+                      (capture
+                        (sequence "<"
+                                  (between 1 32 :symchars)
+                                  :s+
+                                  (some (if (choice :symchars
+                                                    :d)
+                                          1))
+                                  (look -1 ">")
+                                  (look 0 (choice -1
+                                                  (not (choice :symchars
+                                                               :d))))))
+                      ,(pnode :unreadable))
         :form
         (sequence (drop (cmt (constant "smile")
                              ,(fn [& args]
