@@ -290,7 +290,7 @@
            "repeat"
            "seq" "short-fn"
            "tabseq" "try"
-           "unless"
+           "unless" "upscope"
            "var" "varfn" "varglobal" "var-"
            "when" "when-let" "when-with" "while" "with" "with-dyns"
            "with-syms" "with-vars"]))
