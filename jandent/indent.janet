@@ -72,7 +72,7 @@
                           (set "!$%&*+-./:<?=>@^_"))
         :token (some :symchars)
         :escape
-        (sequence "\\" (choice (set "ntrzfev0\"\\")
+        (sequence "\\" (choice (set `"'0?\abefnrtvz`)
                                (sequence "x" (2 :h))
                                (sequence "u" (4 :h))
                                (sequence "U" (6 :h))
