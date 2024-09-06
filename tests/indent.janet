@@ -299,24 +299,20 @@
   after
 
   (def before
-    @``
-     (defn hi
-     [x]
-     (+ x 1))
-
-     (def a
-     2)
-     ``)
+    (buffer "(defn hi\n"
+            "[x]\n"
+            "(+ x 1))\n"
+            "\n"
+            "(def a\n"
+            "2)"))
 
   (def after
-    @``
-     (defn hi
-       [x]
-       (+ x 1))
-
-     (def a
-       2)
-     ``)
+    (buffer "(defn hi\n"
+            "  [x]\n"
+            "  (+ x 1))\n"
+            "\n"
+            "(def a\n"
+            "  2)"))
 
   (format before)
   # =>
@@ -407,44 +403,36 @@
   after
 
   (def before
-    @``
-     (comment
-
-       :hi
-
-     )
-     ``)
+    (buffer "(comment\n"
+            "\n"
+            "  :hi\n"
+            "\n"
+            ")"))
 
   (def after
-    @``
-     (comment
-
-       :hi
-
-       )
-     ``)
+    (buffer "(comment\n"
+            "\n"
+            "  :hi\n"
+            "\n"
+            "  )"))
 
   (format before)
   # =>
   after
 
   (def before
-    @``
-     (comment
-
-       :hi
-       #
-     )
-     ``)
+     (buffer "(comment\n"
+             "\n"
+             "  :hi\n"
+             "  #\n"
+             ")"))
 
   (def after
-    @``
-     (comment
-
-       :hi
-       #
-       )
-     ``)
+    (buffer "(comment\n"
+            "\n"
+            "  :hi\n"
+            "  #\n"
+            "  )"))
 
   (format before)
   # =>
