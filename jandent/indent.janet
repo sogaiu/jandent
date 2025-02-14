@@ -274,7 +274,7 @@
 # added `comment`
 (def indent-2-forms
   "A list of forms that are control forms and should be indented two spaces."
-  (invert ["case" "comment" "compif" "compwhen" "cond" "coro"
+  (invert ["case" "catseq" "comment" "compif" "compwhen" "cond" "coro"
            "def" "def-" "default" "defer" "defglobal" "defmacro" "defmacro-"
            "defn" "defn-" "do"
            "each" "eachp" "eachk" "eachy" "edefer" "ev/do-thread" "ev/spawn"
