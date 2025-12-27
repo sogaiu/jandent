@@ -11,3 +11,7 @@
   :entry "jandent/jindt.janet"
   :install true)
 
+(declare-binscript
+  :main "jandent.janet"
+  :is-janet true)
+

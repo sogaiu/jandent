@@ -1,0 +1,3 @@
+{:start-path "src/main.janet"
+ :obj-path "obj"
+ :out-path "jandent.janet"}

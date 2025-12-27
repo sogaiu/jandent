@@ -1,0 +1,22 @@
+{:name "jandent"
+ :url "https://github.com/sogaiu/jandent"
+ :repo "git+https://github.com/sogaiu/jandent.git"
+
+ :vendored
+ [{:name "some-bundle-bits"
+   :url "https://github.com/sogaiu/some-bundle-bits"
+   :tag "7ddb7ec53a6eb8c81b0c22bb7710a01fff57a759"
+   :paths [["sbb.janet" "bundle/"]]}
+  {:name "jtfm"
+   :url "https://github.com/sogaiu/jtfm"
+   :tag "90435e12e3f787ef8b2b0e3a6e6e967dd5fe729a"
+   :paths [["jtfm.janet" "bin/"]]}
+  {:name "jell"
+   :url "https://github.com/sogaiu/jell"
+   :tag "8277c882b77bca4f629a2b1559732631998842ea"
+   :paths [["jell" "bin/"]]}]
+
+ :binscripts
+ [{:main "jandent.janet"
+   :is-janet true}]}
+
