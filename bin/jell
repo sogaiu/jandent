@@ -18,7 +18,11 @@
   #
   (when (or (and (not conf) (not head))
             (= head "-h") (= head "--help"))
-    (break (merge {:help true} default-opts)))
+    (break (merge {:show-help true} default-opts)))
+  #
+  (when (or (and (not conf) (not head))
+            (= head "-v") (= head "--version"))
+    (break (merge {:show-version true} default-opts)))
   #
   (def opts
     (if head
@@ -46,6 +50,9 @@
   #
   (when (nil? (get opts :flycheck))
     (put opts :flycheck (dyn :flycheck true)))
+  #
+  (when (nil? (get opts :add-shebang))
+    (put opts :add-shebang (dyn :add-shebang true)))
   #
   (when-let [start-path (get the-args 0)]
     (put opts :start-path start-path)
@@ -2441,6 +2448,42 @@
   (with [f (file/open path :w+)]
     true))
 
+(defn u/make-shebang
+  []
+  "#! /usr/bin/env janet")
+
+(comment
+
+  (u/make-shebang)
+  # =>
+  "#! /usr/bin/env janet"
+
+  )
+
+(defn u/dt-stamp
+  [&opt time]
+  (def dt (os/date time))
+  (def year (get dt :year))
+  (def month (inc (get dt :month)))
+  (def day (inc (get dt :month-day)))
+  (def hours (get dt :hours))
+  (def mins (get dt :minutes))
+  (def secs (get dt :seconds))
+  (string/format "%d-%02d-%02d_%02d-%02d-%02d"
+                 year month day hours mins secs))
+
+(comment
+
+  (u/dt-stamp 0)
+  # =>
+  "1970-01-01_00-00-00"
+
+  (u/dt-stamp 1234567890)
+  # =>
+  "2009-02-13_23-31-30"
+
+  )
+
 
 
 (defn c/is-import?
@@ -2453,26 +2496,23 @@
   (when (not head-zloc)
     (break false))
   #
-  (def first-child-node (j/node head-zloc))
-  (when (not first-child-node)
-    (break false))
-  #
-  (def fc-node-type (get first-child-node 0))
-  (def first-non-wsc-node
+  (def [head-type _ _] (j/node head-zloc))
+  (def first-non-wsc-zloc
     (cond
-      (= :symbol fc-node-type)
-      first-child-node
+      (= :symbol head-type)
+      head-zloc
       #
-      (or (= :whitespace fc-node-type)
-          (= :comment fc-node-type))
-      (-> (j/right-skip-wsc head-zloc)
-          j/node)
+      (or (= :whitespace head-type)
+          (= :comment head-type))
+      (j/right-skip-wsc head-zloc)
       #
       nil))
-  (when (not first-non-wsc-node)
+  (when (not first-non-wsc-zloc)
     (break false))
   #
-  (when (= "import" (get first-non-wsc-node 2))
+  (def [fnw-type _ fnw-value] (j/node first-non-wsc-zloc))
+  (when (and (= :symbol fnw-type)
+             (= "import" fnw-value))
     (u/maybe-dump :is-import? (j/gen (j/node zloc)))
     true))
 
@@ -2553,6 +2593,82 @@
 
   )
 
+(defn c/make-version-def-form
+  [&opt name time]
+  (default name "version")
+  #
+  (string/format `(def %s "%s")` name (u/dt-stamp time)))
+
+(comment
+
+  (c/make-version-def-form nil 0)
+  # =>
+  "(def version \"1970-01-01_00-00-00\")"
+
+  (c/make-version-def-form "my-stamp" "1234567890")
+  # =>
+  "(def my-stamp \"2009-02-13_23-31-30\")"
+
+  )
+
+(defn c/is-version-def?
+  [zloc]
+  (def node (j/node zloc))
+  (when (not= :tuple (get node 0))
+    (break false))
+  #
+  (def head-zloc (j/down zloc))
+  (when (not head-zloc)
+    (break false))
+  #
+  (def [head-type _ _] (j/node head-zloc))
+  (def first-non-wsc-zloc
+    (cond
+      (= :symbol head-type)
+      head-zloc
+      #
+      (or (= :whitespace head-type)
+          (= :comment head-type))
+      (j/right-skip-wsc head-zloc)
+      #
+      nil))
+  (when (not first-non-wsc-zloc)
+    (break false))
+  #
+  (def [fnw-type _ fnw-value] (j/node first-non-wsc-zloc))
+  (when (not (and (= :symbol fnw-type)
+                  (= "def" fnw-value)))
+    (break false))
+  #
+  (def second-non-wsc-zloc (j/right-skip-wsc first-non-wsc-zloc))
+  (when (not second-non-wsc-zloc)
+    (break false))
+  #
+  (def [nnw-type _ nnw-value] (j/node second-non-wsc-zloc))
+  (when (and (= :symbol nnw-type)
+             (= "version" nnw-value))
+    (u/maybe-dump :is-version-def? (j/gen (j/node zloc)))
+    true))
+
+(comment
+
+  (def zloc (j/zip-down (j/par `(def version "DEVEL")`)))
+
+  (j/node zloc)
+  # =>
+  [:tuple @{:bc 1 :bl 1 :ec 22 :el 1}
+   [:symbol @{:bc 2 :bl 1 :ec 5 :el 1} "def"]
+   [:whitespace @{:bc 5 :bl 1 :ec 6 :el 1} " "]
+   [:symbol @{:bc 6 :bl 1 :ec 13 :el 1} "version"]
+   [:whitespace @{:bc 13 :bl 1 :ec 14 :el 1} " "]
+   [:string @{:bc 14 :bl 1 :ec 21 :el 1} "\"DEVEL\""]]
+
+  (c/is-version-def? zloc)
+  # =>
+  true
+
+  )
+
 
 (comment import ./jipper :prefix "")
 
@@ -2570,10 +2686,58 @@
 # 2. if an import form is encountered, record a commented version of
 #    it in out-path, and if the file the import form refers to has not
 #    been visited, visit the file and continue recursively.
+#
+# 3. in the case of the starting file, if a `(def version ...)` form
+#    is encountered, replace the `...` with a suitable string.
+
+(defn l/traverse
+  [a-path misc]
+  (def {:out-file out-file :sep sep :seen seen
+        :is-starting-file? is-starting-file?} misc)
+  (def [a-dir a-name] (u/split-path a-path))
+  (def full-path (os/realpath (string (os/cwd) sep a-name)))
+  (when (in seen full-path) (break))
+  #
+  (put seen full-path true)
+  (var zloc
+    (try (-> (slurp full-path)
+             j/par
+             j/zip-down)
+      ([e] (errorf "failed to prepare zloc from: %s" full-path))))
+  (while zloc
+    (def cur-node (j/node zloc))
+    (cond
+      (c/is-import? zloc)
+      (let [i-tbl (c/analyze-import cur-node)
+            commented (-> zloc
+                          (j/insert-child [:whitespace {} " "])
+                          (j/insert-child [:symbol {} "comment"])
+                          j/node
+                          j/gen)]
+        (file/write out-file commented "\n")
+        (def i-path (get i-tbl :path))
+        # parse import path
+        (def [dir name] (u/split-path i-path))
+        (def cur-dir (os/cwd))
+        #
+        (os/cd dir)
+        (l/traverse (string i-path ".janet")
+                  (merge misc {:is-starting-file? false}))
+        (os/cd cur-dir))
+      #
+      (and is-starting-file? (c/is-version-def? zloc))
+      (let [vd-form (c/make-version-def-form)]
+        (file/write out-file vd-form))
+      #
+      (file/write out-file (j/gen cur-node)))
+    (set zloc (j/right zloc))))
+
 (defn l/link
-  [in-path out-path]
-  (u/maybe-dump :call "link" :in-path in-path :out-path out-path)
+  [in-path out-path &opt opts]
+  (u/maybe-dump :call "link" :in-path in-path :out-path out-path
+                :opts opts)
   (def {:sep sep} (u/get-os-bits))
+  (def {:add-shebang add-shebang} opts)
   # assumes paths are full paths...
   # XXX: could check if we had abspath?
   (def [dir-path file-path] (u/split-path in-path))
@@ -2586,40 +2750,10 @@
   #
   (defer (os/cd old-dir)
     (with [out-file (file/open out-path :w)]
-      (defn helper
-        [a-path]
-        (def [a-dir a-name] (u/split-path a-path))
-        (def full-path (os/realpath (string (os/cwd) sep a-name)))
-        (when (in seen full-path) (break))
-        #
-        (put seen full-path true)
-        (var zloc
-          (try (-> (slurp full-path)
-                   j/par
-                   j/zip-down)
-            ([e] (errorf "failed to prepare zloc from: %s" full-path))))
-        (while zloc
-          (def cur-node (j/node zloc))
-          (if (c/is-import? zloc)
-            (let [i-tbl (c/analyze-import cur-node)
-                  commented (-> zloc
-                                (j/insert-child [:whitespace {} " "])
-                                (j/insert-child [:symbol {} "comment"])
-                                j/node
-                                j/gen)]
-              (file/write out-file commented "\n")
-              (def i-path (get i-tbl :path))
-              # parse import path
-              (def [dir name] (u/split-path i-path))
-              (def cur-dir (os/cwd))
-              #
-              (os/cd dir)
-              (helper (string i-path ".janet"))
-              (os/cd cur-dir))
-            (file/write out-file (j/gen cur-node)))
-          (set zloc (j/right zloc))))
-      #
-      (helper in-path)
+      (when add-shebang
+        (file/write out-file (u/make-shebang) "\n\n"))
+      (l/traverse in-path {:out-file out-file :seen seen :sep sep
+                         :is-starting-file? true})
       (file/flush out-file))))
 
 
@@ -2676,19 +2810,21 @@
     (def [_ _ def-type] (j/node a-zloc))
     (def [_ loc _] (j/node (j/up a-zloc)))
     (match (j/node b-zloc)
-      [:symbol _ name]
+      [:symbol name-loc name]
       (array/push acc {:name name
                        :type def-type
-                       :loc loc})
+                       :loc loc
+                       :name-loc name-loc})
       #
       [node-type _ & rest]
       (when (get p/destruct-types node-type)
         (array/concat acc
-                      (keep (fn [[node-type _ node-value]]
+                      (keep (fn [[node-type node-loc node-value]]
                               (when (= :symbol node-type)
                                 {:name node-value
                                  :type def-type
-                                 :loc loc}))
+                                 :loc loc
+                                 :name-loc node-loc}))
                             rest)))))
   #
   acc)
@@ -2736,6 +2872,58 @@
   #
   cur-zloc)
 
+(defn p/sym-at-or-before?
+  [a-loc b-loc]
+  (def {:bl a-bl :bc a-bc :ec a-ec :el a-el} a-loc)
+  (def {:bl b-bl :bc b-bc :ec b-ec :el b-el} b-loc)
+  (assertf (and (= a-bl a-el) (= b-bl b-el))
+           "symbols must start and end on the same line: %n %n"
+           a-loc b-loc)
+  (cond
+    (not= a-bl b-bl)
+    (< a-bl b-bl)
+    # XXX: check that this really should not be <
+    (def le (<= a-ec b-bc))
+    le
+    #
+    (and (= a-bc b-bc) (= a-ec b-ec))
+    true
+    #
+    (errorf "locations should not overlap: %n %n" a-loc b-loc)))
+
+(comment
+
+  (p/sym-at-or-before? {:bl 1 :bc 1 :ec 1 :el 1}
+                     {:bl 2 :bc 2 :ec 2 :el 2})
+  # =>
+  true
+
+  (p/sym-at-or-before? {:bl 2 :bc 2 :ec 2 :el 2}
+                     {:bl 1 :bc 1 :ec 1 :el 1})
+  # =>
+  false
+
+  (p/sym-at-or-before? {:bl 1 :bc 1 :ec 8 :el 1}
+                     {:bl 1 :bc 1 :ec 8 :el 1})
+  # =>
+  true
+
+  (p/sym-at-or-before? {:bl 1 :bc 1 :ec 8 :el 1}
+                     {:bl 1 :bc 8 :ec 10 :el 1})
+  # =>
+  true
+
+  (def [ok? result]
+    (protect (p/sym-at-or-before? {:bl 1 :bc 1 :el 1 :ec 3}
+                                {:bl 1 :bc 2 :el 1 :ec 7})))
+
+  (and (not ok?)
+       (string/has-prefix? "locations should not" result))
+  # =>
+  true
+
+  )
+
 (defn p/rename
   [prefix in-path out-path]
   (u/maybe-dump :call "rename" :in-path in-path :out-path out-path)
@@ -2752,15 +2940,18 @@
               (os/exit 1))))
   # find top-level symbols
   (def sym-zlocs (p/find-top-level-syms cur-zloc))
-  (def sym-bits (reduce p/analyze-defish @[] sym-zlocs))
-  (def sym-tbl (invert (map |(get $ :name) sym-bits)))
+  (def def-descs (reduce p/analyze-defish @[] sym-zlocs))
+  (def sym-tbl (tabseq [{:name name :name-loc name-loc} :in def-descs]
+                 name name-loc))
   # if it worked before, it should work again without error
   (set cur-zloc (j/zip-down tree))
-  # rename using found top-level symbols
+  # may be rename using found top-level symbols
   (while (not (j/end? cur-zloc))
-    (when-let [found (match (j/node cur-zloc) [:symbol _ name]
-                       (when (get sym-tbl name)
-                         name))]
+    (when-let [found
+               (match (j/node cur-zloc) [:symbol curr-loc name]
+                 (when-let [def-name-loc (get sym-tbl name)
+                            _ (p/sym-at-or-before? def-name-loc curr-loc)]
+                   name))]
       (def new-name (string prefix-str found))
       (set cur-zloc (j/replace cur-zloc [:symbol @{} new-name])))
     (set cur-zloc (j/df-next cur-zloc)))
@@ -2928,6 +3119,9 @@
 (comment import ./utils :prefix "")
 
 
+(def version "2026-01-18_03-36-13")
+
+
 (def usage
   ``
   Usage: jell [<start-path> [<out-path> [<obj-path>]]]
@@ -3039,7 +3233,7 @@
   # prepare starting file: tweak import forms
   (def in-path (p/prepare-start start-path in-name obj-path opts))
   # link
-  (l/link in-path out-path)
+  (l/link in-path out-path opts)
   (when (not bs-land)
     (os/chmod out-path perm)))
 
@@ -3051,8 +3245,11 @@
   (u/maybe-dump :opts opts)
   #
   (cond
-    (get opts :help)
+    (get opts :show-help)
     (print usage)
+    #
+    (get opts :show-version)
+    (print version)
     #
     (and (get opts :start-path)
          (get opts :obj-path)

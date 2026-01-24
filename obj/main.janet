@@ -1,5 +1,3 @@
-#! /usr/bin/env janet
-
 # based heavily on andrewchambers' jfmt -- thanks!
 
 (import ./indent :prefix "")
