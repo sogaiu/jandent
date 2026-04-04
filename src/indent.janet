@@ -145,7 +145,7 @@
                       ,(pnode :unreadable))
         :form
         (sequence (drop (cmt (constant "smile")
-                             ,(fn [& args]
+                             ,(fn [&]
                                 (set bi false)
                                 true)))
                   (choice :unreadable
@@ -162,7 +162,7 @@
                         (first args)))
                 # :comment
                 (sequence (drop (cmt (constant "smile")
-                                     ,(fn [& args]
+                                     ,(fn [&]
                                         (set bi false)
                                         true)))
                           :comment))
@@ -517,7 +517,7 @@
     # node-specific "emission"
     (match node
       "\n" (newline)
-      [:ws-bi x] (prin "")
+      [:ws-bi _x] (prin "")
       [:ws x] (emit x)
       [:ws-tr x] (prin x)
       [:comment x] (emit "#" x)
